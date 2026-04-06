@@ -3,82 +3,77 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/')({
-  component: USMCHome,
+  component: DOSHome,
 })
 
 const TABS = [
-  { id: 'overview', label: 'Overview of USMC' },
+  { id: 'overview', label: 'Overview' },
   { id: 'leadership', label: 'Leadership' },
-  { id: 'divisions', label: 'Division Information' },
-  { id: 'announcements', label: 'Announcements' },
-  { id: 'regulations', label: 'Marine Regulations' },
-  { id: 'standing-orders', label: 'Standing Orders' },
   { id: 'releases', label: 'Public Releases' },
+  { id: 'treaties', label: 'Treaty Archives' },
+  { id: 'guidelines', label: 'Diplomatic Guidelines' },
   { id: 'gallery', label: 'Photo Gallery' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
 
-/* ─── Carousel Component ─────────────────────────────────────── */
+/* ─── CSS Variables ──────────────────────────────────────────── */
+const C = {
+  navy: '#1a2744',
+  navyDark: '#0f1a30',
+  navyLight: '#243358',
+  blue: '#2c5282',
+  blueLight: '#3182ce',
+  gold: '#c9a84c',
+  white: '#ffffff',
+  offWhite: '#f7f9fc',
+  lightGray: '#e8edf5',
+  gray: '#718096',
+  darkGray: '#2d3748',
+  border: '#d1dce8',
+  text: '#1a202c',
+  textMuted: '#4a5568',
+}
 
+/* ─── Carousel ───────────────────────────────────────────────── */
 function HomeCarousel() {
   const [slides, setSlides] = useState<any[]>([])
   const [current, setCurrent] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    supabase.from('carousel').select('*').order('sort_order').then(({ data }) => {
-      setSlides(data || [])
-    })
+    supabase.from('carousel').select('*').order('sort_order').then(({ data }) => setSlides(data || []))
   }, [])
 
   useEffect(() => {
     if (slides.length <= 1) return
-    timerRef.current = setInterval(() => {
-      setCurrent(c => (c + 1) % slides.length)
-    }, 4000)
+    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % slides.length), 4000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [slides.length])
 
   if (slides.length === 0) return null
 
-  const prev = () => { setCurrent(c => (c - 1 + slides.length) % slides.length) }
-  const next = () => { setCurrent(c => (c + 1) % slides.length) }
-
   return (
-    <div style={{ position: 'relative', width: '100%', height: 420, overflow: 'hidden', background: '#0a1a0a' }}>
+    <div style={{ position: 'relative', width: '100%', height: 420, overflow: 'hidden', background: C.navyDark }}>
       {slides.map((slide, i) => (
-        <div
-          key={slide.id}
-          style={{
-            position: 'absolute', inset: 0,
-            opacity: i === current ? 1 : 0,
-            transition: 'opacity 0.8s ease',
-            pointerEvents: i === current ? 'auto' : 'none',
-          }}
-        >
-          <img
-            src={slide.image_url}
-            alt={slide.caption || ''}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) contrast(1.1) brightness(0.75)' }}
-          />
+        <div key={slide.id} style={{ position: 'absolute', inset: 0, opacity: i === current ? 1 : 0, transition: 'opacity 0.8s ease' }}>
+          <img src={slide.image_url} alt={slide.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.75)' }} />
           {slide.caption && (
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
-              <span style={{ color: '#e8d8b0', fontFamily: 'Share Tech Mono, monospace', fontSize: 13, letterSpacing: 1 }}>{slide.caption}</span>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 32px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+              <span style={{ color: C.white, fontSize: 14, letterSpacing: 1 }}>{slide.caption}</span>
             </div>
           )}
         </div>
       ))}
-      {/* Gold overlay bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--marine-gold)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'var(--marine-gold)' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: C.gold }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: C.gold }} />
       {slides.length > 1 && (
         <>
-          <button onClick={prev} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(180,140,40,0.4)', color: '#e8d8b0', width: 36, height: 36, borderRadius: 4, cursor: 'pointer', fontSize: 16 }}>‹</button>
-          <button onClick={next} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(180,140,40,0.4)', color: '#e8d8b0', width: 36, height: 36, borderRadius: 4, cursor: 'pointer', fontSize: 16 }}>›</button>
+          <button onClick={() => setCurrent(c => (c - 1 + slides.length) % slides.length)} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.4)', border: `1px solid rgba(201,168,76,0.4)`, color: C.white, width: 36, height: 36, borderRadius: 4, cursor: 'pointer', fontSize: 16 }}>‹</button>
+          <button onClick={() => setCurrent(c => (c + 1) % slides.length)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.4)', border: `1px solid rgba(201,168,76,0.4)`, color: C.white, width: 36, height: 36, borderRadius: 4, cursor: 'pointer', fontSize: 16 }}>›</button>
           <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
             {slides.map((_, i) => (
-              <button key={i} onClick={() => setCurrent(i)} style={{ width: i === current ? 20 : 8, height: 8, borderRadius: 4, background: i === current ? 'var(--marine-gold)' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
+              <button key={i} onClick={() => setCurrent(i)} style={{ width: i === current ? 20 : 8, height: 8, borderRadius: 4, background: i === current ? C.gold : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
             ))}
           </div>
         </>
@@ -87,155 +82,9 @@ function HomeCarousel() {
   )
 }
 
-/* ─── Main Layout ────────────────────────────────────────────── */
-
-function USMCHome() {
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--marine-bg)' }}>
-      {/* Header */}
-      <header style={{ background: 'linear-gradient(180deg, #0d0f0d 0%, var(--marine-green-dark) 100%)', borderBottom: '3px solid var(--marine-gold)' }}>
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden"
-              style={{ border: '2px solid var(--marine-gold)' }}>
-              <img src="/usmc-emblem.png" alt="USMC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <div>
-              <div className="text-xs tracking-widest mb-0.5" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>OSFUSA ROBLOX RP</div>
-              <h1 className="text-xl md:text-2xl font-bold leading-tight" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.1em', color: 'var(--marine-tan-light)', textTransform: 'uppercase' }}>
-                United States Marine Corps
-              </h1>
-              <div className="text-xs tracking-widest" style={{ color: 'var(--marine-gold)', fontFamily: 'Share Tech Mono, monospace' }}>SEMPER FIDELIS</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden md:block text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace', opacity: 0.6 }}>MADE BY GREYHOLIC</span>
-            <button
-              className="md:hidden p-2 rounded"
-              onClick={() => setMenuOpen(!menuOpen)}
-              style={{ color: 'var(--marine-tan)', border: '1px solid var(--marine-border)' }}
-            >
-              {menuOpen ? '✕' : '☰'}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Nav */}
-      <nav style={{ background: 'var(--marine-green-dark)', borderBottom: '1px solid var(--marine-border)' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="hidden md:flex overflow-x-auto">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="px-4 py-3 text-xs font-semibold whitespace-nowrap transition-all"
-                style={{
-                  fontFamily: 'Oswald, sans-serif',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: activeTab === tab.id ? 'var(--marine-tan-light)' : 'var(--marine-tan-dark)',
-                  background: activeTab === tab.id ? 'var(--marine-green)' : 'transparent',
-                  borderBottom: activeTab === tab.id ? '3px solid var(--marine-gold)' : '3px solid transparent',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {menuOpen && (
-            <div className="md:hidden flex flex-col border-t" style={{ borderColor: 'var(--marine-border)' }}>
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setMenuOpen(false) }}
-                  className="px-5 py-3 text-left text-sm font-semibold"
-                  style={{
-                    fontFamily: 'Oswald, sans-serif',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    color: activeTab === tab.id ? 'var(--marine-gold)' : 'var(--marine-tan-dark)',
-                    background: activeTab === tab.id ? 'var(--marine-surface)' : 'transparent',
-                    borderLeft: activeTab === tab.id ? '3px solid var(--marine-gold)' : '3px solid transparent',
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </nav>
-
-      {/* Carousel — only on overview tab */}
-      {activeTab === 'overview' && <HomeCarousel />}
-
-      {/* Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-        {activeTab === 'overview' && <OverviewSection />}
-        {activeTab === 'leadership' && <LeadershipSection />}
-        {activeTab === 'divisions' && <DivisionsSection />}
-        {activeTab === 'announcements' && <AnnouncementsSection />}
-        {activeTab === 'regulations' && <RegulationsSection />}
-        {activeTab === 'standing-orders' && <StandingOrdersSection />}
-        {activeTab === 'releases' && <ReleasesSection />}
-        {activeTab === 'gallery' && <GallerySection />}
-      </main>
-
-      {/* Footer */}
-      <SiteFooter />
-    </div>
-  )
-}
-
-/* ─── Shared ─────────────────────────────────────────────────── */
-
-function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="mb-8 pb-4" style={{ borderBottom: '1px solid var(--marine-border)' }}>
-      <div className="flex items-center gap-3 mb-1">
-        <div className="w-1 h-8 rounded" style={{ background: 'var(--marine-gold)' }} />
-        <h2 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--marine-tan-light)' }}>
-          {title}
-        </h2>
-      </div>
-      {subtitle && <p className="ml-4 text-sm" style={{ color: 'var(--marine-tan-dark)' }}>{subtitle}</p>}
-    </div>
-  )
-}
-
-function InfoCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-lg p-5 mb-4 ${className}`} style={{ background: 'var(--marine-surface)', border: '1px solid var(--marine-border)' }}>
-      {children}
-    </div>
-  )
-}
-
-function LoadingState() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <span style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace', fontSize: 13, letterSpacing: 2 }}>LOADING...</span>
-    </div>
-  )
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg p-10 text-center" style={{ background: 'var(--marine-surface)', border: '1px solid var(--marine-border)' }}>
-      <p style={{ color: 'var(--marine-tan-dark)', fontSize: 13, fontFamily: 'Share Tech Mono, monospace' }}>{message}</p>
-    </div>
-  )
-}
-
 /* ─── Site Footer ────────────────────────────────────────────── */
-
 function SiteFooter() {
   const [settings, setSettings] = useState<Record<string, string>>({})
-
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       const map: Record<string, string> = {}
@@ -245,43 +94,20 @@ function SiteFooter() {
   }, [])
 
   return (
-    <footer style={{ background: 'var(--marine-green-dark)', borderTop: '1px solid var(--marine-border)', color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>
-      {/* Links row */}
+    <footer style={{ background: C.navyDark, borderTop: `4px solid ${C.gold}`, color: C.lightGray, fontFamily: 'sans-serif' }}>
       {(settings.discord_url || settings.roblox_community_url || settings.roblox_game_url) && (
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-center gap-6" style={{ borderBottom: '1px solid var(--marine-border)' }}>
-          {settings.discord_url && (
-            <a href={settings.discord_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs hover:underline"
-              style={{ color: 'var(--marine-tan)', textDecoration: 'none' }}>
-              <span style={{ fontSize: 16 }}>💬</span> Discord Server
-            </a>
-          )}
-          {settings.roblox_community_url && (
-            <a href={settings.roblox_community_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs hover:underline"
-              style={{ color: 'var(--marine-tan)', textDecoration: 'none' }}>
-              <span style={{ fontSize: 16 }}>👥</span> Roblox Community
-            </a>
-          )}
-          {settings.roblox_game_url && (
-            <a href={settings.roblox_game_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 text-xs hover:underline"
-              style={{ color: 'var(--marine-tan)', textDecoration: 'none' }}>
-              <span style={{ fontSize: 16 }}>🎮</span> Roblox Game
-            </a>
-          )}
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '16px 24px', display: 'flex', flexWrap: 'wrap', gap: 24, borderBottom: `1px solid rgba(255,255,255,0.1)` }}>
+          {settings.discord_url && <a href={settings.discord_url} target="_blank" rel="noopener noreferrer" style={{ color: C.lightGray, textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Discord Server</a>}
+          {settings.roblox_community_url && <a href={settings.roblox_community_url} target="_blank" rel="noopener noreferrer" style={{ color: C.lightGray, textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>👥 Roblox Community</a>}
+          {settings.roblox_game_url && <a href={settings.roblox_game_url} target="_blank" rel="noopener noreferrer" style={{ color: C.lightGray, textDecoration: 'none', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>🎮 Roblox Game</a>}
         </div>
       )}
-      {/* Bottom row */}
-      <div className="py-4 text-center text-xs">
-        OSFUSA — UNITED STATES MARINE CORPS &nbsp;|&nbsp; SEMPER FIDELIS &nbsp;|&nbsp; ROBLOX RP GROUP
-        <br />
-        <span style={{ opacity: 0.5 }}>MADE BY GREYHOLIC</span>
+      <div style={{ padding: '16px 24px', textAlign: 'center', fontSize: 12, opacity: 0.6 }}>
+        OSFUSA — DEPARTMENT OF STATE &nbsp;|&nbsp; ROBLOX RP &nbsp;|&nbsp; MADE BY GREYHOLIC
         &nbsp;|&nbsp;
-        <a href="/admin"
-          style={{ color: 'var(--marine-tan-dark)', textDecoration: 'none', opacity: 0.5 }}
+        <a href="/admin" style={{ color: C.lightGray, textDecoration: 'none', opacity: 0.7 }}
           onMouseOver={e => (e.currentTarget.style.opacity = '1')}
-          onMouseOut={e => (e.currentTarget.style.opacity = '0.5')}>
+          onMouseOut={e => (e.currentTarget.style.opacity = '0.7')}>
           Admin Login
         </a>
       </div>
@@ -289,68 +115,141 @@ function SiteFooter() {
   )
 }
 
-/* ─── Overview Section ───────────────────────────────────────── */
+/* ─── Shared Components ──────────────────────────────────────── */
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div style={{ marginBottom: 32, paddingBottom: 16, borderBottom: `2px solid ${C.gold}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+        <div style={{ width: 4, height: 32, background: C.gold, borderRadius: 2 }} />
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: C.navy, fontFamily: 'Georgia, serif', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h2>
+      </div>
+      {subtitle && <p style={{ marginLeft: 16, fontSize: 14, color: C.textMuted, margin: '4px 0 0 16px' }}>{subtitle}</p>}
+    </div>
+  )
+}
 
+function LoadingState() {
+  return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0', color: C.gray, fontSize: 13, letterSpacing: 2 }}>LOADING...</div>
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div style={{ padding: 40, textAlign: 'center', background: C.offWhite, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+      <p style={{ color: C.gray, fontSize: 13 }}>{message}</p>
+    </div>
+  )
+}
+
+/* ─── Main Layout ────────────────────────────────────────────── */
+function DOSHome() {
+  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: C.offWhite, fontFamily: 'sans-serif' }}>
+      {/* Header */}
+      <header style={{ background: `linear-gradient(180deg, ${C.navyDark} 0%, ${C.navy} 100%)`, borderBottom: `4px solid ${C.gold}` }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.gold}`, flexShrink: 0 }}>
+              <img src="/dos-emblem.png" alt="DOS" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: C.gold, textTransform: 'uppercase' }}>OSFUSA ROBLOX RP</div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: C.white, margin: '2px 0', fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>Department of State</h1>
+              <div style={{ fontSize: 11, letterSpacing: 2, color: 'rgba(201,168,76,0.7)' }}>DIPLOMATIC SERVICE</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'none' }} className="md-show">MADE BY GREYHOLIC</span>
+            <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'transparent', border: `1px solid rgba(255,255,255,0.3)`, color: C.white, padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 16 }}>
+              {menuOpen ? '✕' : '☰'}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Nav */}
+      <nav style={{ background: C.navy, borderBottom: `1px solid ${C.navyLight}` }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'flex', overflowX: 'auto' }}>
+            {TABS.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                padding: '12px 20px', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                background: 'transparent', border: 'none', whiteSpace: 'nowrap',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: activeTab === tab.id ? C.gold : 'rgba(255,255,255,0.6)',
+                borderBottom: activeTab === tab.id ? `3px solid ${C.gold}` : '3px solid transparent',
+              }}>{tab.label}</button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Carousel */}
+      {activeTab === 'overview' && <HomeCarousel />}
+
+      {/* Content */}
+      <main style={{ flex: 1, maxWidth: 1100, margin: '0 auto', width: '100%', padding: '40px 24px' }}>
+        {activeTab === 'overview' && <OverviewSection />}
+        {activeTab === 'leadership' && <LeadershipSection />}
+        {activeTab === 'releases' && <ReleasesSection />}
+        {activeTab === 'treaties' && <TreatiesSection />}
+        {activeTab === 'guidelines' && <GuidelinesSection />}
+        {activeTab === 'gallery' && <GallerySection />}
+      </main>
+
+      <SiteFooter />
+    </div>
+  )
+}
+
+/* ─── Overview Section ───────────────────────────────────────── */
 function OverviewSection() {
   const blocks = [
-    {
-      heading: 'About the USMC',
-      text: 'The United States Marine Corps (USMC) within OSFUSA is an elite military branch dedicated to upholding discipline, honor, and combat readiness in the Roblox RP environment. As the tip of the spear for OSFUSA\'s ground forces, the Marine Corps operates under strict military doctrine and chain of command.',
-    },
-    {
-      heading: 'Mission Statement',
-      text: 'The mission of the OSFUSA Marine Corps is to maintain a ready force of skilled and disciplined Marines capable of rapid deployment and combined arms operations. We exist to protect OSFUSA interests, enforce law and order, and project military power wherever directed by high command.',
-    },
-    {
-      heading: 'Core Values',
-      text: 'Honor · Courage · Commitment\n\nEvery Marine is expected to embody these three core values in all interactions, whether in training, on patrol, or in command. These values form the foundation of Marine Corps culture and are non-negotiable requirements for service.',
-    },
-    {
-      heading: 'History & Heritage',
-      text: 'Founded as a branch of the OSFUSA armed forces, the Marine Corps has grown from a small detachment into a full combined-arms force. Through numerous campaigns, exercises, and joint operations, the Corps has established a proud tradition of excellence and esprit de corps that defines every Marine who serves.',
-    },
-    {
-      heading: 'Chain of Command',
-      text: 'The Marine Corps operates under a clear and strictly enforced chain of command. All orders flow from the Commandant of the Marine Corps down through Generals, Colonels, Lieutenant Colonels, Majors, Captains, Lieutenants, Staff NCOs, NCOs, and finally to junior enlisted Marines. Respecting the chain of command is mandatory.',
-    },
+    { heading: 'About the Department of State', text: 'The OSFUSA Department of State serves as the primary foreign affairs agency of the OSFUSA government within the Roblox RP environment. The Department is responsible for advising the President on international relations, negotiating treaties, and representing OSFUSA interests on the world stage.' },
+    { heading: 'Mission Statement', text: 'To shape and sustain a peaceful, prosperous, just, and democratic world, and foster conditions for stability and progress for the benefit of the American people and people everywhere. The Department leads America\'s foreign policy through diplomacy, advocacy, and assistance by advancing the interests of the American people.' },
+    { heading: 'Diplomatic Security Service (DSS)', text: 'The Diplomatic Security Service is the security and law enforcement arm of the Department of State. DSS special agents protect the Secretary of State, U.S. Ambassadors, and high-ranking foreign dignitaries. They also investigate passport and visa fraud, and maintain security at diplomatic missions.' },
+    { heading: 'Core Values', text: 'Excellence · Integrity · Service\n\nEvery diplomat and officer of the Department is expected to uphold these core values in all their interactions, whether in negotiations, public service, or internal operations.' },
+    { heading: 'Organizational Structure', text: 'The Department is led by the Secretary of State, appointed by the President and confirmed by the Senate. The Secretary is supported by Deputy Secretaries, Under Secretaries, and a network of Ambassadors and diplomatic staff stationed across OSFUSA\'s allied territories.' },
   ]
 
   const quickFacts = [
-    { label: 'GROUP', value: 'OSFUSA' },
-    { label: 'BRANCH', value: 'Marine Corps' },
-    { label: 'MOTTO', value: 'Semper Fidelis' },
+    { label: 'AGENCY', value: 'Dept. of State' },
     { label: 'FOUNDED', value: 'OSFUSA Era' },
-    { label: 'STATUS', value: 'Active' },
     { label: 'PLATFORM', value: 'Roblox RP' },
+    { label: 'STATUS', value: 'Active' },
+    { label: 'GROUP', value: 'OSFUSA' },
+    { label: 'MOTTO', value: 'Diplomacy First' },
   ]
 
   return (
     <div>
-      <SectionHeader title="Overview of the USMC" subtitle="OSFUSA — United States Marine Corps | General Information" />
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          {blocks.map((block) => (
-            <InfoCard key={block.heading}>
-              <h3 className="text-xs font-bold mb-2" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--marine-gold)' }}>{block.heading}</h3>
+      <SectionHeader title="Overview" subtitle="OSFUSA Department of State — General Information" />
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+        <div>
+          {blocks.map(block => (
+            <div key={block.heading} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: 20, marginBottom: 16 }}>
+              <h3 style={{ fontSize: 12, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{block.heading}</h3>
               {block.text.split('\n\n').map((p, i) => (
-                <p key={i} className="text-sm leading-relaxed" style={{ color: 'var(--marine-tan)', marginBottom: i < block.text.split('\n\n').length - 1 ? 8 : 0 }}>{p}</p>
+                <p key={i} style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: i > 0 ? '8px 0 0' : 0 }}>{p}</p>
               ))}
-            </InfoCard>
+            </div>
           ))}
         </div>
         <div>
-          <div className="rounded-lg p-4 mb-4" style={{ background: 'var(--marine-surface)', border: '1px solid var(--marine-border)' }}>
-            <h3 className="text-xs font-bold mb-3" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--marine-gold)' }}>Quick Facts</h3>
-            {quickFacts.map((fact) => (
-              <div key={fact.label} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--marine-border)' }}>
-                <span className="text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>{fact.label}</span>
-                <span className="text-xs" style={{ color: 'var(--marine-tan-light)', fontFamily: 'Share Tech Mono, monospace' }}>{fact.value}</span>
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: 20, marginBottom: 16 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Quick Facts</h3>
+            {quickFacts.map(fact => (
+              <div key={fact.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: `1px solid ${C.lightGray}` }}>
+                <span style={{ fontSize: 11, color: C.gray, letterSpacing: 1 }}>{fact.label}</span>
+                <span style={{ fontSize: 11, color: C.darkGray, fontWeight: 600 }}>{fact.value}</span>
               </div>
             ))}
           </div>
-          <div className="rounded-lg overflow-hidden" style={{ background: 'var(--marine-surface)', border: '1px solid var(--marine-border)' }}>
-            <img src="/usmc-emblem.png" alt="USMC Emblem" style={{ width: '100%', padding: 16, objectFit: 'contain' }} />
-            <div className="p-2 text-center text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace', borderTop: '1px solid var(--marine-border)' }}>USMC — OSFUSA MARINES</div>
+          <div style={{ background: C.navy, border: `1px solid ${C.navyLight}`, borderRadius: 8, padding: 20, textAlign: 'center' }}>
+            <img src="/dos-emblem.png" alt="DOS Emblem" style={{ width: '80%', objectFit: 'contain', margin: '0 auto' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 8, letterSpacing: 1 }}>U.S. DEPT. OF STATE — OSFUSA</div>
           </div>
         </div>
       </div>
@@ -358,8 +257,7 @@ function OverviewSection() {
   )
 }
 
-/* ─── Leadership Section (Supabase) ──────────────────────────── */
-
+/* ─── Leadership Section ─────────────────────────────────────── */
 function LeadershipSection() {
   const [members, setMembers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -373,25 +271,25 @@ function LeadershipSection() {
 
   return (
     <div>
-      <SectionHeader title="Leadership" subtitle="OSFUSA Marine Corps — Commanding Officers & Senior Staff" />
-      {loading ? <LoadingState /> : members.length === 0 ? <EmptyState message="NO LEADERSHIP RECORDS ON FILE" /> : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {members.map((member) => {
-            const isCommandant = member.title?.toLowerCase().includes('commandant')
+      <SectionHeader title="Leadership" subtitle="Department of State — Senior Officials & Diplomatic Staff" />
+      {loading ? <LoadingState /> : members.length === 0 ? <EmptyState message="No leadership records on file." /> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+          {members.map((member, i) => {
+            const isSecretary = member.title?.toLowerCase().includes('secretary of state') && !member.title?.toLowerCase().includes('deputy') && !member.title?.toLowerCase().includes('under')
             return (
-              <div key={member.id} className="rounded-lg overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${isCommandant ? 'var(--marine-gold)' : 'var(--marine-border)'}` }}>
-                <div style={{ width: '100%', height: 380, overflow: 'hidden', background: '#1a3a1a', position: 'relative' }}>
+              <div key={member.id} style={{ background: C.white, border: `1px solid ${isSecretary ? C.gold : C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: 180, overflow: 'hidden', background: C.lightGray, position: 'relative' }}>
                   {member.image_url
                     ? <img src={member.image_url} alt={member.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, fontWeight: 700, color: 'var(--marine-gold)', fontFamily: 'Oswald, sans-serif' }}>{member.username.slice(0, 2).toUpperCase()}</div>
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, fontWeight: 700, color: C.navy }}>{member.username.slice(0, 2).toUpperCase()}</div>
                   }
-                  {isCommandant && (
-                    <div style={{ position: 'absolute', top: 10, left: 10, padding: '3px 10px', borderRadius: 4, background: 'rgba(180,140,40,0.85)', color: '#0a1a0a', fontFamily: 'Share Tech Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>COMMANDING</div>
+                  {isSecretary && (
+                    <div style={{ position: 'absolute', top: 10, left: 10, padding: '3px 10px', borderRadius: 4, background: C.gold, color: C.navyDark, fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>SECRETARY</div>
                   )}
                 </div>
-                <div className="p-4" style={{ borderTop: `2px solid ${isCommandant ? 'var(--marine-gold)' : 'var(--marine-border)'}` }}>
-                  <div className="font-bold text-base" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.06em', color: isCommandant ? 'var(--marine-gold)' : 'var(--marine-tan-light)', textTransform: 'uppercase' }}>{member.username}</div>
-                  <div className="text-sm mt-1" style={{ color: 'var(--marine-tan-dark)' }}>{member.title}</div>
+                <div style={{ padding: 16, borderTop: `2px solid ${isSecretary ? C.gold : C.border}` }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: isSecretary ? C.blue : C.darkGray, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{member.username}</div>
+                  <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4 }}>{member.title}</div>
                 </div>
               </div>
             )
@@ -402,350 +300,142 @@ function LeadershipSection() {
   )
 }
 
-/* ─── Divisions Section (Supabase) ───────────────────────────── */
-
-function DivisionsSection() {
-  const [divisions, setDivisions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-
-  useEffect(() => {
-    supabase.from('divisions').select('*').order('sort_order').then(({ data }) => {
-      setDivisions(data || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
-
+/* ─── Expandable card helper ─────────────────────────────────── */
+function ExpandCard({ id, expanded, onToggle, header, children }: { id: string; expanded: string | null; onToggle: (id: string) => void; header: React.ReactNode; children: React.ReactNode }) {
+  const isOpen = expanded === id
   return (
-    <div>
-      <SectionHeader title="Division Information" subtitle="Marine Corps Organizational Structure — click a division to expand" />
-      {loading ? <LoadingState /> : divisions.length === 0 ? <EmptyState message="NO DIVISIONS ON FILE" /> : (
-        <div>
-          {divisions.map((div) => (
-            <div key={div.id} className="rounded-lg mb-3 overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${expanded === div.id ? 'var(--marine-gold)' : 'var(--marine-border)'}`, transition: 'border-color 0.2s' }}>
-              <button onClick={() => toggle(div.id)} className="w-full flex items-center gap-4 p-4 text-left hover:brightness-110" style={{ background: div.color || '#1a2a3a', border: 'none', cursor: 'pointer', width: '100%' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 6, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', fontSize: 28 }}>
-                  {div.icon_url
-                    ? <img src={div.icon_url} alt={div.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : div.icon
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs mb-0.5" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'Share Tech Mono, monospace' }}>[{div.code}] — {div.role}</div>
-                  <div className="font-bold" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.08em', color: '#e8d8b0', textTransform: 'uppercase', fontSize: 15 }}>{div.name}</div>
-                  {div.motto && <div className="text-xs mt-0.5 italic" style={{ color: 'rgba(232,216,176,0.55)' }}>"{div.motto}"</div>}
-                </div>
-                <div style={{ color: 'var(--marine-gold)', fontSize: 18, flexShrink: 0, transform: expanded === div.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
-              </button>
-              {expanded === div.id && (
-                <div style={{ borderTop: '1px solid var(--marine-border)', background: 'rgba(0,0,0,0.2)' }}>
-                  {div.image_url && (
-                    <div style={{ width: '100%', height: 380, overflow: 'hidden' }}>
-                      <img src={div.image_url} alt={div.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) brightness(0.85)' }} />
-                    </div>
-                  )}
-                  <div style={{ padding: '20px 24px' }}>
-                    <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--marine-tan)' }}>{div.description}</p>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {div.leadership && div.leadership.length > 0 && (
-                        <div>
-                          <div className="text-xs font-bold mb-2" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.1em', color: 'var(--marine-gold)', textTransform: 'uppercase' }}>Leadership</div>
-                          {div.leadership.map((l: string, i: number) => (
-                            <div key={i} className="text-xs py-1.5" style={{ color: 'var(--marine-tan-dark)', borderBottom: '1px solid var(--marine-border)' }}>{l}</div>
-                          ))}
-                        </div>
-                      )}
-                      <div>
-                        {div.entrance && (
-                          <div className="mb-4">
-                            <div className="text-xs font-bold mb-2" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.1em', color: 'var(--marine-gold)', textTransform: 'uppercase' }}>Entrance Method</div>
-                            <p className="text-xs leading-relaxed" style={{ color: 'var(--marine-tan-dark)' }}>{div.entrance}</p>
-                          </div>
-                        )}
-                        {div.discord_label && (
-                          <div>
-                            <div className="text-xs font-bold mb-2" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.1em', color: 'var(--marine-gold)', textTransform: 'uppercase' }}>Communications</div>
-                            {div.discord_url
-                              ? <a href={div.discord_url} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline" style={{ color: '#4a9a4a' }}>Click here to access the {div.discord_label} ↗</a>
-                              : <span className="text-xs" style={{ color: 'var(--marine-tan-dark)' }}>Click here to access the {div.discord_label}</span>
-                            }
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+    <div style={{ background: C.white, border: `1px solid ${isOpen ? C.blue : C.border}`, borderRadius: 8, marginBottom: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+      <button onClick={() => onToggle(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 16, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        {header}
+        <div style={{ marginLeft: 'auto', color: C.blue, fontSize: 18, flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
+      </button>
+      {isOpen && (
+        <div style={{ borderTop: `1px solid ${C.border}`, background: C.offWhite }}>
+          {children}
         </div>
       )}
     </div>
   )
 }
 
-/* ─── Announcements Section (Supabase) ──────────────────────── */
-
-function AnnouncementsSection() {
-  const [items, setItems] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-
-  useEffect(() => {
-    supabase.from('announcements').select('*').order('sort_order').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
-
-  return (
-    <div>
-      <SectionHeader title="Announcements" subtitle="Official announcements and updates from USMC command — click to read" />
-      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="NO ANNOUNCEMENTS ON FILE" /> : (
-        <div>
-          {items.map((item) => (
-            <div key={item.id} className="rounded-lg mb-3 overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${expanded === item.id ? 'var(--marine-gold)' : 'var(--marine-border)'}`, transition: 'border-color 0.2s' }}>
-              <button onClick={() => toggle(item.id)} className="w-full flex items-center gap-4 p-4 text-left hover:brightness-110" style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%' }}>
-                <div className="flex-1 min-w-0">
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
-                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#1a3a1a', color: '#5aaa5a', fontFamily: 'Share Tech Mono, monospace', border: '1px solid #2a5a2a', flexShrink: 0 }}>ANNOUNCEMENT</span>
-                    <span className="text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>{item.date}</span>
-                  </div>
-                  <div className="font-semibold text-sm" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.05em', color: 'var(--marine-tan-light)', textTransform: 'uppercase' }}>{item.title}</div>
-                </div>
-                <div style={{ color: 'var(--marine-gold)', fontSize: 18, flexShrink: 0, transform: expanded === item.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
-              </button>
-              {expanded === item.id && (
-                <div style={{ borderTop: '1px solid var(--marine-border)', background: 'rgba(0,0,0,0.2)' }}>
-                  {item.image_url && (
-                    <div style={{ width: '100%', height: 380, overflow: 'hidden' }}>
-                      <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) brightness(0.85)' }} />
-                    </div>
-                  )}
-                  <div style={{ padding: '20px 24px' }}>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--marine-tan)' }}>{item.description}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+function renderContent(text: string) {
+  return text.split('\n').map((line, i) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g)
+    return <p key={i} style={{ fontSize: 13, color: C.text, lineHeight: 1.7, marginBottom: 6 }}>{parts.map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)}</p>
+  })
 }
 
-/* ─── Regulations Section (Supabase) ────────────────────────── */
-
-function RegulationsSection() {
-  const [items, setItems] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-
-  useEffect(() => {
-    supabase.from('regulations').select('*').order('number').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
-
-  return (
-    <div>
-      <SectionHeader title="Marine Regulations" subtitle="Official USMC regulations, policies, and governing documents — click to read" />
-      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="NO REGULATIONS ON FILE" /> : (
-        <div>
-          {items.map((item) => (
-            <div key={item.id} className="rounded-lg mb-3 overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${expanded === item.id ? 'var(--marine-gold)' : 'var(--marine-border)'}`, transition: 'border-color 0.2s' }}>
-              {/* Header — always visible, click to expand */}
-              <button
-                onClick={() => toggle(item.id)}
-                className="w-full flex items-center gap-4 p-4 text-left transition-all hover:brightness-110"
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%' }}
-              >
-                <div className="text-2xl flex-shrink-0" style={{ color: 'var(--marine-gold)' }}>📄</div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.05em', color: 'var(--marine-tan-light)' }}>
-                    Regulation No. {item.number}: {item.title}
-                  </div>
-                  <div className="text-xs mt-0.5" style={{ color: 'var(--marine-tan-dark)' }}>
-                    {expanded === item.id ? 'Click to collapse' : 'Click to read'}
-                  </div>
-                </div>
-                <div style={{ color: 'var(--marine-gold)', fontSize: 18, flexShrink: 0, transform: expanded === item.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
-              </button>
-              {/* Expanded content */}
-              {expanded === item.id && (
-                <div style={{ borderTop: '1px solid var(--marine-border)', background: 'rgba(0,0,0,0.2)' }}>
-                  {item.image_url && (
-                    <div style={{ width: '100%', height: 380, overflow: 'hidden' }}>
-                      <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) brightness(0.85)' }} />
-                    </div>
-                  )}
-                  <div style={{ padding: '20px 24px' }}>
-                    {item.content ? (
-                      <div className="text-sm leading-relaxed" style={{ color: 'var(--marine-tan)', fontFamily: 'Share Tech Mono, monospace', fontSize: 13 }}>
-                        {item.content.split('\n').map((line: string, i: number) => {
-                          const parts = line.split(/\*\*(.*?)\*\*/g)
-                          return (
-                            <p key={i} style={{ marginBottom: 6 }}>
-                              {parts.map((part, j) => j % 2 === 1 ? <strong key={j} style={{ color: 'var(--marine-tan-light)' }}>{part}</strong> : part)}
-                            </p>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm italic" style={{ color: 'var(--marine-tan-dark)' }}>No content available for this regulation.</p>
-                    )}
-                    {item.document_url && (
-                      <a href={item.document_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-4 text-xs hover:underline" style={{ color: 'var(--marine-gold)', fontFamily: 'Oswald, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        📄 View Full Document ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ─── Standing Orders Section (Supabase) ────────────────────── */
-
-function StandingOrdersSection() {
-  const [items, setItems] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-
-  useEffect(() => {
-    supabase.from('standing_orders').select('*').order('number').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
-  }, [])
-
-  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
-
-  return (
-    <div>
-      <SectionHeader title="Standing Orders" subtitle="Active directives and standing orders from USMC command — click to read" />
-      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="NO STANDING ORDERS ON FILE" /> : (
-        <div>
-          {items.map((item) => (
-            <div key={item.id} className="rounded-lg mb-3 overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${expanded === item.id ? 'var(--marine-gold)' : 'var(--marine-border)'}`, transition: 'border-color 0.2s' }}>
-              <button onClick={() => toggle(item.id)} className="w-full flex items-center gap-4 p-4 text-left hover:brightness-110" style={{ background: 'transparent', border: 'none', cursor: 'pointer', width: '100%' }}>
-                <span style={{ color: 'var(--marine-gold)', fontSize: 20, flexShrink: 0 }}>📄</span>
-                <div className="flex-1 min-w-0">
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
-                    <span className="text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>ORDER NO. {item.number}</span>
-                    <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#1a3a1a', color: '#5aaa5a', fontFamily: 'Share Tech Mono, monospace', border: '1px solid #2a5a2a' }}>{item.status}</span>
-                    {item.date && <span className="text-xs" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace' }}>{item.date}</span>}
-                  </div>
-                  <div className="font-semibold text-sm" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.05em', color: 'var(--marine-tan-light)', textTransform: 'uppercase' }}>{item.title}</div>
-                </div>
-                <div style={{ color: 'var(--marine-gold)', fontSize: 18, flexShrink: 0, transform: expanded === item.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
-              </button>
-              {expanded === item.id && (
-                <div style={{ borderTop: '1px solid var(--marine-border)', background: 'rgba(0,0,0,0.2)' }}>
-                  {item.image_url && (
-                    <div style={{ width: '100%', height: 380, overflow: 'hidden' }}>
-                      <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) brightness(0.85)' }} />
-                    </div>
-                  )}
-                  <div style={{ padding: '20px 24px' }}>
-                    {item.summary && <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--marine-tan)' }}>{item.summary}</p>}
-                    {item.document_url && (
-                      <a href={item.document_url} target="_blank" rel="noopener noreferrer" className="text-xs inline-flex items-center gap-1 hover:underline" style={{ color: 'var(--marine-gold)', fontFamily: 'Oswald, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        📄 View Full Order ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ─── Public Releases Section (Supabase) ─────────────────────── */
-
+/* ─── Public Releases Section ────────────────────────────────── */
 const TYPE_COLORS: Record<string, string> = {
-  'PRESS RELEASE': '#2a4a5a',
-  'OPERATIONAL REPORT': '#3a4a2a',
-  'ANNOUNCEMENT': '#4a3a1a',
-  'POLICY UPDATE': '#3a2a4a',
-  'INTELLIGENCE BULLETIN': '#4a2a2a',
+  'PRESS RELEASE': '#2a4a8a',
+  'DIPLOMATIC CABLE': '#1a5a3a',
+  'STATEMENT': '#6a3a1a',
+  'TREATY NOTICE': '#4a1a6a',
+  'ANNOUNCEMENT': '#1a4a6a',
 }
 
 function ReleasesSection() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const toggle = (id: string) => setExpanded(p => p === id ? null : id)
 
   useEffect(() => {
-    supabase.from('releases').select('*').order('sort_order').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
+    supabase.from('releases').select('*').order('sort_order').then(({ data }) => { setItems(data || []); setLoading(false) })
   }, [])
-
-  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id)
 
   return (
     <div>
-      <SectionHeader title="Public Releases" subtitle="Official communications, press releases, and public documents — click to read" />
-      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="NO PUBLIC RELEASES ON FILE" /> : (
-        <div>
-          {items.map((item) => (
-            <div key={item.id} className="rounded-lg mb-3 overflow-hidden" style={{ background: 'var(--marine-surface)', border: `1px solid ${expanded === item.id ? 'var(--marine-gold)' : 'var(--marine-border)'}`, transition: 'border-color 0.2s' }}>
-              <button onClick={() => toggle(item.id)} className="w-full flex items-center gap-4 p-4 text-left hover:brightness-110" style={{ background: TYPE_COLORS[item.type] || '#2a3a2a', border: 'none', cursor: 'pointer', width: '100%' }}>
-                <div className="flex-1 min-w-0">
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
-                    <span className="text-xs font-bold" style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--marine-tan-light)' }}>{item.type}</span>
-                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'Share Tech Mono, monospace' }}>| {item.date}</span>
-                  </div>
-                  <div className="font-bold text-sm" style={{ fontFamily: 'Oswald, sans-serif', letterSpacing: '0.07em', color: '#e8d8b0', textTransform: 'uppercase' }}>{item.title}</div>
-                </div>
-                <div style={{ color: 'rgba(232,216,176,0.7)', fontSize: 18, flexShrink: 0, transform: expanded === item.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</div>
-              </button>
-              {expanded === item.id && (
-                <div style={{ borderTop: '1px solid rgba(0,0,0,0.3)', background: 'rgba(0,0,0,0.2)' }}>
-                  {item.image_url && (
-                    <div style={{ width: '100%', height: 380, overflow: 'hidden' }}>
-                      <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(15%) brightness(0.85)' }} />
-                    </div>
-                  )}
-                  <div style={{ padding: '20px 24px' }}>
-                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--marine-tan)' }}>{item.description}</p>
-                    {item.document_url && (
-                      <a href={item.document_url} target="_blank" rel="noopener noreferrer" className="text-xs inline-flex items-center gap-1 hover:underline" style={{ color: 'var(--marine-gold)', fontFamily: 'Oswald, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        📄 Read Document ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
+      <SectionHeader title="Public Releases" subtitle="Official communications and press releases from the Department of State" />
+      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="No public releases on file." /> : items.map(item => (
+        <ExpandCard key={item.id} id={item.id} expanded={expanded} onToggle={toggle} header={
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 3, background: TYPE_COLORS[item.type] || '#2a4a8a', color: '#fff', letterSpacing: 1 }}>{item.type}</span>
+              <span style={{ fontSize: 11, color: C.gray }}>{item.date}</span>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.darkGray }}>{item.title}</div>
+          </div>
+        }>
+          {item.image_url && <div style={{ height: 380, overflow: 'hidden' }}><img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+          <div style={{ padding: 20 }}>
+            <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, marginBottom: 12 }}>{item.description}</p>
+            {item.document_url && <a href={item.document_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.blue, textDecoration: 'none', fontWeight: 600 }}>📄 Read Full Document ↗</a>}
+          </div>
+        </ExpandCard>
+      ))}
     </div>
   )
 }
 
-/* ─── Gallery Section (Supabase) ─────────────────────────────── */
+/* ─── Treaty Archives Section ────────────────────────────────── */
+function TreatiesSection() {
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const toggle = (id: string) => setExpanded(p => p === id ? null : id)
 
+  useEffect(() => {
+    supabase.from('treaties').select('*').order('sort_order').then(({ data }) => { setItems(data || []); setLoading(false) })
+  }, [])
+
+  return (
+    <div>
+      <SectionHeader title="Treaty Archives" subtitle="Official treaties, agreements, and international accords — click to read" />
+      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="No treaties on file." /> : items.map(item => (
+        <ExpandCard key={item.id} id={item.id} expanded={expanded} onToggle={toggle} header={
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 20, color: C.gold }}>📜</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.darkGray }}>Treaty No. {item.number}: {item.title}</div>
+              {item.date && <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>{item.date}</div>}
+            </div>
+          </div>
+        }>
+          {item.image_url && <div style={{ height: 380, overflow: 'hidden' }}><img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+          <div style={{ padding: 20 }}>
+            {item.content ? <div style={{ fontFamily: 'monospace', fontSize: 13 }}>{renderContent(item.content)}</div> : <p style={{ color: C.gray, fontStyle: 'italic' }}>No content available.</p>}
+            {item.document_url && <a href={item.document_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.blue, textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 12 }}>📄 View Full Document ↗</a>}
+          </div>
+        </ExpandCard>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Diplomatic Guidelines Section ─────────────────────────── */
+function GuidelinesSection() {
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const toggle = (id: string) => setExpanded(p => p === id ? null : id)
+
+  useEffect(() => {
+    supabase.from('guidelines').select('*').order('sort_order').then(({ data }) => { setItems(data || []); setLoading(false) })
+  }, [])
+
+  return (
+    <div>
+      <SectionHeader title="Diplomatic Guidelines" subtitle="Official protocols, procedures, and diplomatic standards — click to read" />
+      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="No guidelines on file." /> : items.map(item => (
+        <ExpandCard key={item.id} id={item.id} expanded={expanded} onToggle={toggle} header={
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 20, color: C.blue }}>📋</span>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.darkGray }}>Guideline No. {item.number}: {item.title}</div>
+          </div>
+        }>
+          {item.image_url && <div style={{ height: 380, overflow: 'hidden' }}><img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+          <div style={{ padding: 20 }}>
+            {item.content ? <div style={{ fontFamily: 'monospace', fontSize: 13 }}>{renderContent(item.content)}</div> : <p style={{ color: C.gray, fontStyle: 'italic' }}>No content available.</p>}
+            {item.document_url && <a href={item.document_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.blue, textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 12 }}>📄 View Full Document ↗</a>}
+          </div>
+        </ExpandCard>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Gallery Section ────────────────────────────────────────── */
 function GallerySection() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -753,70 +443,52 @@ function GallerySection() {
   const [lightbox, setLightbox] = useState<any | null>(null)
 
   useEffect(() => {
-    supabase.from('gallery').select('*').order('sort_order').then(({ data }) => {
-      setItems(data || [])
-      setLoading(false)
-    })
+    supabase.from('gallery').select('*').order('sort_order').then(({ data }) => { setItems(data || []); setLoading(false) })
   }, [])
 
-  const categories = ['All', ...Array.from(new Set(items.map((i) => i.category)))]
-  const filtered = filter === 'All' ? items : items.filter((i) => i.category === filter)
+  const categories = ['All', ...Array.from(new Set(items.map(i => i.category)))]
+  const filtered = filter === 'All' ? items : items.filter(i => i.category === filter)
 
   return (
     <div>
-      <SectionHeader title="Photo Gallery" subtitle="Official imagery and operational photography — click to enlarge" />
-      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="NO PHOTOS ON FILE" /> : (
+      <SectionHeader title="Photo Gallery" subtitle="Official imagery and diplomatic photography — click to enlarge" />
+      {loading ? <LoadingState /> : items.length === 0 ? <EmptyState message="No photos on file." /> : (
         <>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {categories.map((cat) => (
-              <button key={cat} onClick={() => setFilter(cat)}
-                className="px-4 py-1.5 rounded text-xs font-bold transition-all"
-                style={{
-                  fontFamily: 'Oswald, sans-serif', letterSpacing: '0.08em', textTransform: 'uppercase',
-                  background: filter === cat ? 'var(--marine-green)' : 'var(--marine-surface)',
-                  color: filter === cat ? 'var(--marine-tan-light)' : 'var(--marine-tan-dark)',
-                  border: filter === cat ? '1px solid var(--marine-gold)' : '1px solid var(--marine-border)',
-                }}>
-                {cat}
-              </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+            {categories.map(cat => (
+              <button key={cat} onClick={() => setFilter(cat)} style={{
+                padding: '6px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                background: filter === cat ? C.navy : C.white,
+                color: filter === cat ? C.white : C.textMuted,
+                border: `1px solid ${filter === cat ? C.navy : C.border}`,
+              }}>{cat}</button>
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((item) => (
-              <div key={item.id} className="group rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightbox(item)} style={{ background: 'var(--marine-surface)', border: '1px solid var(--marine-border)' }}>
-                <div className="overflow-hidden relative" style={{ aspectRatio: '16/9' }}>
-                  <img src={item.image_url} alt={item.caption}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    style={{ filter: 'sepia(20%) contrast(1.1) brightness(0.9)' }} />
-                  <div className="absolute top-3 right-3">
-                    <span className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(0,0,0,0.75)', color: 'var(--marine-gold)', fontFamily: 'Share Tech Mono, monospace' }}>{item.category}</span>
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.3)' }}>
-                    <span style={{ color: 'white', fontSize: 32 }}>🔍</span>
-                  </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {filtered.map(item => (
+              <div key={item.id} onClick={() => setLightbox(item)} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+                onMouseOver={e => (e.currentTarget.style.borderColor = C.blue)}
+                onMouseOut={e => (e.currentTarget.style.borderColor = C.border)}>
+                <div style={{ aspectRatio: '16/9', overflow: 'hidden', position: 'relative' }}>
+                  <img src={item.image_url} alt={item.caption} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                    onMouseOver={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                    onMouseOut={e => (e.currentTarget.style.transform = 'scale(1)')} />
+                  <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: C.white, fontSize: 10, padding: '2px 8px', borderRadius: 3, letterSpacing: 1 }}>{item.category}</div>
                 </div>
-                <div className="p-3 text-sm" style={{ color: 'var(--marine-tan-dark)', fontFamily: 'Share Tech Mono, monospace', lineHeight: '1.5' }}>{item.caption}</div>
+                <div style={{ padding: '10px 12px', fontSize: 12, color: C.textMuted }}>{item.caption}</div>
               </div>
             ))}
           </div>
-
-          {/* Lightbox */}
           {lightbox && (
-            <div
-              onClick={() => setLightbox(null)}
-              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-            >
+            <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
               <div onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--marine-gold)', fontFamily: 'Share Tech Mono, monospace', fontSize: 12, letterSpacing: 1 }}>{lightbox.category}</span>
-                  <button onClick={() => setLightbox(null)} style={{ background: 'transparent', border: '1px solid #3a5a3a', color: '#c8d8c0', width: 36, height: 36, borderRadius: 6, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+                  <span style={{ color: C.gold, fontSize: 12, letterSpacing: 1 }}>{lightbox.category}</span>
+                  <button onClick={() => setLightbox(null)} style={{ background: 'transparent', border: `1px solid rgba(255,255,255,0.3)`, color: C.white, width: 36, height: 36, borderRadius: 6, cursor: 'pointer', fontSize: 20 }}>×</button>
                 </div>
-                <img
-                  src={lightbox.image_url}
-                  alt={lightbox.caption}
-                  style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: 8, border: '1px solid var(--marine-border)' }}
-                />
-                <div style={{ color: '#c8d8c0', fontFamily: 'Share Tech Mono, monospace', fontSize: 13, textAlign: 'center' }}>{lightbox.caption}</div>
+                <img src={lightbox.image_url} alt={lightbox.caption} style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: 8 }} />
+                <div style={{ color: C.white, fontSize: 13, textAlign: 'center' }}>{lightbox.caption}</div>
               </div>
             </div>
           )}
@@ -824,3 +496,4 @@ function GallerySection() {
       )}
     </div>
   )
+}
